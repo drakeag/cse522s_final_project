@@ -35,6 +35,8 @@
 *.i*86
 *.x86_64
 *.hex
+dense_mm
+random_access
 
 # Debug files
 *.dSYM/
