@@ -16,15 +16,32 @@ echo Test Results > $RESULTS_FILE
 echo >> $RESULTS_FILE
 
 echo Test $TEST_NUM >> $RESULTS_FILE
-echo sudo ./perf stat -e $PERF_EVENTS ./random_access 2 $SYS_MMAP >> $RESULTS_FILE
+CMD="sudo ./perf stat -e ${PERF_EVENTS} ./simple_sequential 4096 ${SYS_MMAP}"
+# Write the command to the results file
+echo $CMD >> $RESULTS_FILE
+# Run the command and write the output to the results file
 # 2> is the output from the program, 1> is the output from perf
-sudo ./perf stat -e $PERF_EVENTS ./random_access 2 $SYS_MMAP 2>>$RESULTS_FILE 1>>$RESULTS_FILE
+$CMD 2>>$RESULTS_FILE 1>>$RESULTS_FILE
 ((++TEST_NUM))
 echo >> $RESULTS_FILE
 
 echo Test $TEST_NUM >> $RESULTS_FILE
-echo sudo ./perf stat -e $PERF_EVENTS ./dense_mm 20 $SYS_MMAP >> $RESULTS_FILE
-sudo ./perf stat -e $PERF_EVENTS ./dense_mm 20 $SYS_MMAP 2>>$RESULTS_FILE 1>>$RESULTS_FILE
+CMD="sudo ./perf stat -e ${PERF_EVENTS} ./random_access 2 ${SYS_MMAP}"
+# Write the command to the results file
+echo $CMD >> $RESULTS_FILE
+# Run the command and write the output to the results file
+# 2> is the output from the program, 1> is the output from perf
+$CMD 2>>$RESULTS_FILE 1>>$RESULTS_FILE
+((++TEST_NUM))
+echo >> $RESULTS_FILE
+
+echo Test $TEST_NUM >> $RESULTS_FILE
+CMD="sudo ./perf stat -e ${PERF_EVENTS} ./dense_mm 20 ${SYS_MMAP}"
+# Write the command to the results file
+echo $CMD >> $RESULTS_FILE
+# Run the command and write the output to the results file
+# 2> is the output from the program, 1> is the output from perf
+$CMD 2>>$RESULTS_FILE 1>>$RESULTS_FILE
 ((++TEST_NUM))
 echo >> $RESULTS_FILE
 
