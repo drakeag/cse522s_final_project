@@ -38,6 +38,7 @@
 dense_mm
 random_access
 simple_sequential
+context_switching
 
 # Debug files
 *.dSYM/
