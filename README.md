@@ -4,6 +4,28 @@ Alex Drake and Nick Norden
 
 [CSE 522S Class Website](https://www.cse.wustl.edu/~brian.kocoloski/courses/cse522s/)
 
+## Usage
+#### Build MMU kernel module (optional dmesg clear)
+```
+$ make
+$ sudo dmesg --clear
+```
+#### Load MMU kernel module (optional dmesg to verify load)
+```
+$ sudo insmod mmu_module.ko
+$ dmesg
+````
+#### Run tests
+```
+$ ./run_tests.sh
+````
+#### Unload MMU kernel module (optional dmesg to verify unload)
+```
+$ sudo rmmod mmu_module
+$ dmesg
+```
+
+
 ## Motivation
 The memory management paradigm Linux uses is called demand paging. Demand paging means that a process will not be mapped completely into RAM when it is first executed. Over the course of process execution an operation on a virtual address that has not been mapped and cause a page fault. On the page fault, If the necessary conditions are met, the kernel will then map the physical memory into the process’ virtual address space. 
 
