@@ -7,7 +7,7 @@
 #include <sys/wait.h>
 
 
-#define LARGE_PAGE 0x10000
+#define LARGE_PAGE 0x100000
 
 int main(int argc, char** argv)
 {
@@ -20,16 +20,18 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	int* address = NULL;
-	address = (int*)mmap(NULL, LARGE_PAGE, PROT_READ|PROT_WRITE, MAP_SHARED, configfd, 0);
+	address = (int*)mmap((void*)0x76E00000U, LARGE_PAGE, PROT_READ|PROT_WRITE, MAP_SHARED, configfd, 0);
 	if (address == MAP_FAILED) {
 		perror("mmap");
 		return -1;
 	}
+
+	//*(int*)(address + 0x4000) = 1;
     
 	while((offset * step) < LARGE_PAGE) {
 		*address = step;
 		printf("0x%lx=%d\n", address, *address);
-		address += offset/sizeof(int);
+		address += 0x1000/sizeof(int);
 		step++;
 	}
 
