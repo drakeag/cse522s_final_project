@@ -26,7 +26,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include "timelib.h"
+#include "commonlib.h"
 
 #define ZERO64B 0LL
 #define POLY 0x0000000000000007ULL
@@ -137,18 +137,10 @@ run_kernel(unsigned long      tbl_entries,
         return -1;
     }*/
     
-    if (USE_MMAP_DRIVER == 0)
+    table = (uint64_t *)get_mmap_addr(length, USE_MMAP_DRIVER);
+    if (table == MAP_FAILED)
     {
-      table = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
-      if (table == MAP_FAILED)
-      {
-          exit(EXIT_FAILURE);
-      }
-    }
-    else
-    {
-      // Setup mmap device driver call
-      printf("mmap device driver not implemented yet\n");
+      perror("mmap");
       exit(EXIT_FAILURE);
     }
 

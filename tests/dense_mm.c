@@ -16,7 +16,7 @@
 #include <stdio.h>  //For printf()
 #include <stdlib.h> //for exit() and atoi()
 #include <sys/mman.h>
-#include "timelib.h"
+#include "commonlib.h"
 
 const int num_expected_args = 3;
 const unsigned sqrt_of_UINT32_MAX = 65536;
@@ -48,24 +48,12 @@ int main( int argc, char* argv[] ){
 	length = sizeof(double) * squared_size;
 
 	//printf("Generating matrices...\n");
-
-	/*A = (double*) malloc( sizeof(double) * squared_size );
-	B = (double*) malloc( sizeof(double) * squared_size );
-	C = (double*) malloc( sizeof(double) * squared_size );*/
 	
 	get_time(&start_time);
-	if (use_mmap_driver == 0)
-	{
-		A = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
-		B = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-		C = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-	}
-	else
-	{
-		// Setup mmap device driver call
-		printf("mmap device driver not implemented yet\n");
-		exit(EXIT_FAILURE);
-	}
+	
+	A = (double*)get_mmap_addr(length, use_mmap_driver);
+	B = (double*)get_mmap_addr(length, use_mmap_driver);
+	C = (double*)get_mmap_addr(length, use_mmap_driver);
 
 	for( index = 0; index < squared_size; index++ ){
 		A[index] = (double) rand();

@@ -12,7 +12,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include "timelib.h"
+#include "commonlib.h"
 
 #define NUM_EXPECTED_ARGS 4
 #define SLEEP_USEC 1
@@ -47,6 +47,7 @@ int main(int argc, char ** argv)
     int *map; // mmaped array of ints
     struct timespec start_time;
     struct timespec end_time;
+    int configfd;
 
     if (argc != NUM_EXPECTED_ARGS)
     {
@@ -66,16 +67,7 @@ int main(int argc, char ** argv)
 
     get_time(&start_time);
     
-    if (use_mmap_driver == 0)
-    {
-        map = mmap(NULL, map_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
-    }
-    else
-    {
-        // Setup mmap device driver call
-        printf("mmap device driver not implemented yet\n");
-        exit(EXIT_FAILURE);
-    }
+    map = get_mmap_addr(map_size, use_mmap_driver);
     
     if (map == MAP_FAILED)
     {
