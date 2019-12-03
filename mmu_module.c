@@ -26,128 +26,13 @@
 		ttbr; \
 	})
 
-#define get_pgd() \
-	({ \
-		unsigned int pg = get_ttbr0(); \
-		pg &= ~(PTRS_PER_PGD*sizeof(pgd_t)-1); \
-		(pgd_t *)phys_to_virt(pg); \
-	})
-
 static dev_t first; // Global variable for the first device number 
 static struct cdev c_dev; // Global variable for the character device structure
 static struct class *cl; // Global variable for the device class
 
-
-#define L1_PTE_IDX(x) ((x & 0xFFFFFC00U) >> 10)
-#define get_ptep(tt_base, vaddr) (unsigned int*)(tt_base + L1_PTE_IDX(vaddr))
-
-static unsigned int fault_counter = 0;
-static unsigned long save_fault = 0; 
-unsigned int addr;
-
-static unsigned int vaddr2paddr(unsigned int vaddr)
-{
-	pgd_t *pgd;
-	pud_t *pud;
-	pmd_t *pmd;
-	pte_t *pte;
-	unsigned int paddr = 0;
-	unsigned int page_addr = 0;
-	unsigned int page_offset = 0;
-
-	pgd = pgd_offset(current->mm, vaddr);
-	if (pgd_none(*pgd)) {
-		printk("not mapped in pgd\n");
-		return -1;
-	}
-
-	pud = pud_offset(pgd, vaddr);
-	if (pud_none(*pud)) {
-		printk("not mapped in pud\n");
-		return -1;
-	}
-
-	pmd = pmd_offset(pud, vaddr);
-	if (pmd_none(*pmd)) {
-		printk("not mapped in pmd\n");
-		return -1;
-	}
-
-	pte = pte_offset_kernel(pmd, vaddr);
-	printk("pte val = 0x%lx\n", pte_val(*pte));
-	printk("pte address = %p\n", pte);
-	if (pte_none(*pte)) {
-		printk("not mapped in pte\n");
-		return -1;
-	}
-
-
-	/* Page frame physical address mechanism | offset */
-	page_addr = pte_val(*pte) & PAGE_MASK;
-	page_offset = vaddr & ~PAGE_MASK;
-	paddr = page_addr | page_offset;
-	printk("page_addr = %lx, page_offset = %lx\n", page_addr, page_offset);
-		printk("vaddr = %lx, paddr = %lx\n", vaddr, paddr);
-
-	return paddr;
-}
-
-static void mk_largepage(unsigned int address)
-{
-	// // Get the base table address in hardware
-	// unsigned int ttbr0;
-	// asm volatile ("mrc p15, 0, %0, c2, c0, 1" : "=r" (ttbr0));
-
-	// printk(KERN_INFO "ttrb0 base address %lx\n", ttbr0);
-
-	// // Get the virtual address ptep
-	// unsigned int* ptep = get_ptep(ttbr0, address);
-
-	// printk(KERN_INFO "ptep value %lx, address @ %p\n", *ptep, ptep);
-
-	// // Update the large page bit
-	// *ptep &= ~(1U << 1);
-	// *ptep |= 1U;
-
-	// printk(KERN_INFO "ptep new value %lx", *ptep, ptep);
-
-	// // Flush the mmu
-	// asm volatile("mcr	p15, 0, %0, c7, c10, 1" :: "r" (ptep));
-
-	// Get the base table address in hardware
-	long unsigned int ttbr0;
-	long unsigned int fault_addr;
-	long unsigned int fault;
-	long unsigned int pdg_idx;
-	long unsigned int pgt_idx;
-	long unsigned int* pde;
-	
-	asm volatile ("mrc p15, 0, %0, c2, c0, 0" : "=r" (ttbr0) ::);
-	printk("ttrb0 phys base address 0x%lx\n", ttbr0);
-	
-	asm volatile ("mrc p15, 0, %0, c5, c0, 0" : "=r" (fault) ::);
-	
-	if (fault & (1UL << 11U)) {
-		
-		asm volatile ("mrc p15, 0, %0, c6, c0, 0" : "=r" (fault_addr) ::);
-		printk("faulting address 0x%ld\n", fault_addr);
-	
-		pdg_idx = (address & 0xFFF00000) >> 20U;
-		printk("pdg idx %ld\n", pdg_idx);
-		pde = (long unsigned int*)((long unsigned int)ttbr0 + (pdg_idx << 2U));
-		printk("pde address 0x%lx\n", pde);
-
-		if ((*pde & 3UL) == 0U) {
-			printk("Address not mapped 0x%lx\n", *pde);
-			return;
-		}
-
-		printk("pde val 0x%lx\n", *pde);
-		*pde |= 1UL;
-		*pde &= ~(1UL << 1U);
-		printk("pde val 0x%lx\n", *pde);
-	}
-}
+static unsigned int fault_counter = 0U;
+static unsigned int save_fault = 0U; 
+static unsigned int addr = 0U;
 
 /**
  * @brief Called the first time a memory area is accessed 
@@ -158,14 +43,8 @@ vm_fault_t vma_fault(struct vm_fault *vmf)
 {
 	struct page *page = NULL;
 	unsigned long offset;
-	unsigned long fault_addr;
-	unsigned long int* hw_pte;
-	unsigned long int* new_pte;
 	pgd_t *pgd;
 	pte_t *pte;
-	uint8_t tex = 0;
-	uint8_t xn = 0;
-	unsigned long int i = 0;
 
 	fault_counter++;
 	printk(KERN_NOTICE "vma_fault %d\n", fault_counter);
@@ -175,82 +54,104 @@ vm_fault_t vma_fault(struct vm_fault *vmf)
 
 	printk(KERN_NOTICE "mapping to physical address %lx\n", vmf->vma->vm_private_data + offset);
 	
-	/* Normal 4KB page */
+	// Normal 4KB page
 	page = virt_to_page(vmf->vma->vm_private_data + offset);
 	vmf->page = page;
 	get_page(page);
 
-	/*********************************************************************************************/
+	if (fault_counter == 1) {
+		asm("mrc p15, 0, %0, c6, c0, 0" : "=r" (save_fault) ::);
+		printk("saved fault 0%lx\n", save_fault);
+	} else if (fault_counter == 2) {
 
-	// if (fault_counter == 1U) {
+		// Get the first fault's values
+		u32 l1_addr;
+		asm("mrc p15, 0, %0, c2, c0, 0" : "=r" (l1_addr) :: );
+		l1_addr &= ~(0x3FFFU);
+		l1_addr |= (u32)(((save_fault >> 20) & 0xFFFU) << 2);
+		l1_addr = phys_to_virt(l1_addr);
+		printk("first fault l1_addr 0x%lx=0x%lx\n", l1_addr, *(u32*)l1_addr);
 
-		asm("mrc p15, 0, %0, c6, c0, 0" : "=r" (fault_addr) ::);
-		printk("fault 0x%lx\n", fault_addr);
-		// return 0;
-	// } else if (fault_counter == 2U) {
+		u32 l1_val = *(u32*)l1_addr;
+		u32 l2_addr = l1_val;
+		l2_addr &= ~(0x3FFU);
+		l2_addr |= (((save_fault >> 12) & 0xFFU) << 2);
+		l2_addr = phys_to_virt(l2_addr);
+		printk("first fault l2_addr 0x%lx=0x%lx\n", l2_addr, *(u32*)l2_addr);
+		save_fault = *(u32*)l2_addr;
 
-	// 	fault_addr -= (unsigned long)0x1000;
-		printk("Turning pte 0x%lx into large pte\n", fault_addr);
+		asm("mrc p15, 0, %0, c2, c0, 0" : "=r" (l1_addr) :: );
+		l1_addr &= ~(0x3FFFU);
+		l1_addr |= (u32)((((u32)vmf->vma->vm_start >> 20) & 0xFFFU) << 2);
+		l1_addr = phys_to_virt(l1_addr);
+		printk("vma start l1_addr 0x%lx=0x%lx\n", l1_addr, *(u32*)l1_addr);
+
+		l1_val = *(u32*)l1_addr;
+		l2_addr = l1_val;
+		l2_addr &= ~(0x3FFU);
+		l2_addr |= ((((u32)vmf->vma->vm_start >> 12) & 0xFFU) << 2);
+		l2_addr = phys_to_virt(l2_addr);
+		printk("vma start l2_addr 0x%lx=0x%lx\n", l2_addr, *(u32*)l2_addr);
+
+		// Need to move these for the large descriptor
+		u32 large_pte_val = *(u32*)l2_addr;
+		large_pte_val = save_fault;
+		u32 tex = (large_pte_val >> 6) & 3U;               // mask out the tex bits
+		u32 xn  = large_pte_val & 1U;                      // mask out the execute never bit
+		large_pte_val &= ~(0xF000U);                       // clear lower address bits
+		large_pte_val &= ~(3U);                            // clear small pte bits
+		large_pte_val |= 1U | (tex << 12) | (xn << 15);    // make the large page descriptor
 		
-		pgd = get_pgd() + pgd_index(fault_addr);
-		printk("pgd index 0x%x\n", pgd_index(fault_addr));
-		printk("ttbr0 value       = %08llx\n", (long long)*(u32*)&pgd[0]);
+		u32* large_pte = (u32*)l2_addr;
+		*large_pte = large_pte_val;
 
-		pte = (pte_t*)(pmd_page_vaddr(*(pmd_t*)pgd) + pte_index(fault_addr));
-		printk("linux pte address = %lx\n", pte);
-		printk("linux pte value   = %lx\n", pte_val(*pte));
-		printk("ARM pte address   = %lx\n", (pte_t*)((u32)pte + (u32)2048));
+		u32 total_pages = (vmf->vma->vm_end - vmf->vma->vm_start) / 0x1000;
+		u32 current_page = 0U;
+		printk("%d pages for vma range 0x%lx - 0x%lx\n", total_pages, vmf->vma->vm_end, vmf->vma->vm_start);
 
-		hw_pte = (unsigned long int*)((unsigned long int)pte + 2048UL);
-		printk("ARM pte value     = %08llx\n", (long long)*hw_pte);
-
-		// //Now 15 more times
-
-		if (fault_counter == 2) {
-			i = 0;
-			hw_pte--; // Go back to the original fault
-
-			// Need to move these for the large descriptor
-			*hw_pte &= ~(0x0000F000U); // clear lower address bits
-			*hw_pte &= ~(3U);          // clear small pte bits
-			tex = (*hw_pte >> 6) & 3U; // mask out the tex bits
-			xn  = *hw_pte & 1U;        // mask out the execute never bit
-			*hw_pte |= 1UL | (tex << 12U) | (xn << 15U); // make the large page descriptor
-
-			asm("mcr p15, 0, %0, c7, c10, 1" :: "r"(hw_pte) :);	// flush VMA
-			printk("%lx ARM pte value = %08llx\n", (pte_t*)hw_pte, (long long)*(hw_pte));
+		while (current_page < total_pages) {
+			*large_pte = large_pte_val + ((current_page/16U) << 16);
+			asm("mcr p15, 0, %0, c7, c10, 1" :: "r"(large_pte) :);	// flush VMA
+			//printk("ARM pte value 0x%lx=0x%lx\n", large_pte, *large_pte);
 			
-			*new_pte = *hw_pte;
-
-			while(i < 15) {
-				hw_pte++;
-				i++;
-
-				*hw_pte = *new_pte;
-				asm("mcr p15, 0, %0, c7, c10, 1" :: "r"(hw_pte) :);	// flush VMA
-				printk("%lx ARM pte value = %08llx\n", (pte_t*)hw_pte, (long long)*(hw_pte));
-			}
+			// Move to next pte
+			large_pte++;
+			current_page++;
 		}
 
-	//vmf->page = NULL;
-	return 0;//VM_FAULT_NOPAGE;
+		printk("remapped to %d 64KB pages\n", current_page/16U + 1);
 
-	/* Modified 64MB page
-		Get lock
-		vmf->pte = pte_offset_map_lock(vmf->vma->mm, vmf->pmd, vmf->address, &vmf->ptl);
+			// Code for 1MB pages, untested
+			// fault_addr -= 0x1000U;
+			// u32 l1_addr = get_ttbr0();
+			// l1_addr &= ~(0x3FFFU);
+			// l1_addr |= (u32)((((u32)fault_addr >> 20) & 0xFFFU) << 2);
+			// l1_addr = phys_to_virt(l1_addr);
+			// printk("l1_addr 0x%lx=0x%lx\n", l1_addr, *(u32*)l1_addr);
 
-		page = alloc_page_vma(vmf->gfp_mask, vmf->vma, vmf->address);
-		make_huge_pte(vmf->vma, page, &entry);
+			// u32 l1_val = *(u32*)l1_addr;
+			// u32 l2_addr = l1_val;
+			// l2_addr &= ~(0x3FFU);
+			// l2_addr |= ((((u32)fault_addr >> 12) & 0xFFU) << 2);
+			// l2_addr = phys_to_virt(l2_addr);
+			// printk("l2_addr 0x%lx=0x%lx\n", l2_addr, *(u32*)l2_addr);
 
-		*vmf->pte = entry; 
-		pmd_populate(vmf->vma->mm, vmf->pmd, pgtable_t ptep)
-		update_mmu_cache(vmf->vma, vmf->address, vmf->pte);
+			// u32 l2_val = *(u32*)l2_addr;
+			// u32 section = 0U;
+			// section |= l1_val & 0x3E0U;         // imp, domain bits
+			// section |= (l1_val & 0x8U) << 16;   // ns bit
+			// section |= l2_val & 0xFFF00000U;    // base address
+			// section |= (l2_val & 0xFF0U) << 6;  // ng, s, ap[2], tex, ap[1:0] bits
+			// section |= (l2_val & 0xEU);         // c, b, 1 bits
+			// section |= (l2_val & 1U) << 4;      // xn bit
+			// section &= ~((1UL << 18) | 1U);     // Clear bit 18 to make it normal 1MB section
+			// *(u32*)l1_addr = section;
+			
+			// printk("section value %lx\n", *(u32*)l1_addr);
+			// asm("mcr p15, 0, %0, c7, c10, 1" :: "r"(l1_addr) :); // flush VMA
+	}
 
-		printk(KERN_NOTICE "new pte %lx\n", (unsigned long)*vmf->pte);
-
-		pte_unmap_unlock(vmf->pte, vmf->ptl);
-		return VM_FAULT_NOPAGE;
-	*/
+	return 0;
 }
 
 void vma_open(struct vm_area_struct* vma)
@@ -295,10 +196,7 @@ static int driver_open(struct inode* inodep, struct file* filep)
 	printk(KERN_INFO "Driver opened\n");
 
 	// 128 KB
-	filep->private_data = kmalloc(0x10000, GFP_KERNEL);
-
-	// vaddr2paddr(filep->private_data);
-
+	filep->private_data = kmalloc(0x100000, GFP_KERNEL);
 	addr = filep->private_data;
 	if (!filep->private_data)
 		return -1;
@@ -358,5 +256,3 @@ module_exit(m_exit);
 MODULE_LICENSE ("GPL");
 MODULE_DESCRIPTION ("CSE 522s Project");
 
-
-//
