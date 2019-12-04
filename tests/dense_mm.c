@@ -50,8 +50,9 @@ int main( int argc, char* argv[] ){
 	//printf("Generating matrices...\n");
 	
 	get_time(&start_time);
-	
+	printf("length: %d\n", length);
 	A = (double*)get_mmap_addr(length, use_mmap_driver);
+	printf("A: %p\n", A);
 	B = (double*)get_mmap_addr(length, use_mmap_driver);
 	C = (double*)get_mmap_addr(length, use_mmap_driver);
 
@@ -70,9 +71,10 @@ int main( int argc, char* argv[] ){
 			}	
 		}
 	}
-	munmap(A, length);
-	munmap(B, length);
-	munmap(C, length);
+	printf("A: %p\n", A);
+	//munmap(A, length);
+	//munmap(B, length);
+	//munmap(C, length);
 	get_time(&end_time);
 
 

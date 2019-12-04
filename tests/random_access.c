@@ -149,7 +149,7 @@ run_kernel(unsigned long      tbl_entries,
     ret = __run_kernel(iterations, table, tbl_entries, ran);
 
     //free(table);
-    munmap(table, length);
+    //munmap(table, length);
 
     return ret;
 
@@ -188,7 +188,7 @@ int main(int argc, char ** argv)
     get_time(&start_time);
     ret = run_kernel(t_entries, 4);
     get_time(&end_time);
-    printf("Exeuction time: %.9f secs\n", timediff(start_time, end_time));
+    printf("Execution time: %.9f secs\n", timediff(start_time, end_time));
     
     return ret;    
 }

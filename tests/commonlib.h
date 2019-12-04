@@ -24,17 +24,18 @@ int *get_mmap_addr(int size, int mmap_function)
   
     if (mmap_function == 0)
     {
-	address = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+        address = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     }
     else
     {
-	configfd = open("/dev/cproj", O_RDWR);
+        configfd = open("/dev/cproj", O_RDWR);
         if(configfd < 0)
         {
             perror("open");
             exit(EXIT_FAILURE);
         }
-	address = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, configfd, 0);
+        //address = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, configfd, 0);
+        address = mmap((void*)0x76E00000U, size, PROT_READ | PROT_WRITE, MAP_SHARED, configfd, 0);
     }
   
     return address;

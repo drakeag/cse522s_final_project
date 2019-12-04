@@ -14,7 +14,7 @@
 #include <sys/mman.h>
 #include "commonlib.h"
 
-#define NUM_EXPECTED_ARGS 4
+#define NUM_EXPECTED_ARGS 5
 #define SLEEP_USEC 1
 
 static void usec_sleep(long usec)
@@ -34,17 +34,25 @@ static void usec_sleep(long usec)
 
 static void usage(void)
 {
-    printf("Usage: ./context_switching <map size (bytes)> (must be even) <iterations per context switch> <mmap function> (0 for system, 1 for custom driver)\n");
+    printf("Usage: ./context_switching <size> <offset> <switch percent> <mmap function>\n");
+    printf("\t<size>          : map size in bytes, must be even\n");
+    printf("\t<offset>        : must be positive\n");
+    printf("\t<switch percent>: context switch percentage between 0 and 1\n");
+    printf("\t<mmap function> : 0 for system, 1 for custom driver\n");
 }
 
 int main(int argc, char ** argv)
 {
+    int i = 0;
     int ret;
+    unsigned int step = 0;
     unsigned long map_size;
+    float switch_percent;
     int switch_iteration;
     int use_mmap_driver = 0;
-    int num_entries;
-    int *map; // mmaped array of ints
+    int *address = NULL;
+    int *orig_addr = NULL;
+    unsigned long int offset;
     struct timespec start_time;
     struct timespec end_time;
     int configfd;
@@ -55,36 +63,58 @@ int main(int argc, char ** argv)
       exit(EXIT_FAILURE);
     }
 
-    map_size = atof(argv[1]);
-    switch_iteration = atoi(argv[2]);
-    use_mmap_driver = atoi(argv[3]);
-    num_entries = map_size / sizeof(int);
-
-    if (map_size % 2 != 0) {
+    sscanf(argv[1], "%lu", &map_size);
+    sscanf(argv[2], "%lu", &offset);
+    switch_percent = atof(argv[3]);
+    use_mmap_driver = atoi(argv[4]);
+    
+    if (map_size % 2 != 0)
+    {
+        printf("Size must be even\n");
         usage();
         exit(EXIT_FAILURE);
     }
-
+    
+    if (offset < 0)
+    {
+        printf("Offset must be greater than 0\n");
+        usage();
+        exit(EXIT_FAILURE);
+    }
+    
+    if (switch_percent < 0 || switch_percent > 1)
+    {
+        printf("Switch percentage must be between 0 and 1\n");
+        usage();
+        exit(EXIT_FAILURE);
+    }
+    
+    switch_iteration = (map_size / offset) / ((map_size / offset) * switch_percent);
+    
     get_time(&start_time);
     
-    map = get_mmap_addr(map_size, use_mmap_driver);
+    orig_addr = get_mmap_addr(map_size, use_mmap_driver);
+    address = orig_addr;
     
-    if (map == MAP_FAILED)
+    if (address == MAP_FAILED)
     {
         exit(EXIT_FAILURE);
     }    
-
-    for (int i=0; i<num_entries; i++)
+    
+    while((offset * step) < map_size) 
     {
-        map[i] = i*2;
+		*address = step;
+		//printf("%p=%d\n", address, *address);
+		address += offset/sizeof(int);
+		step++;
         if (i % switch_iteration == 0)
         {
             // Yield the processor
             usec_sleep(SLEEP_USEC);
         }
-    }
+	}
 
-    munmap(map, map_size);
+    munmap(orig_addr, map_size);
     get_time(&end_time);
     printf("Exeuction time: %.9f secs\n", timediff(start_time, end_time));
     

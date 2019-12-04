@@ -1,0 +1,421 @@
+Test Results
+
+Test 1
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 4096 4096 0
+Execution time: 0.000089063 secs
+
+ Performance counter stats for './simple_sequential 4096 4096 0':
+
+           438,572      cache-references                                            
+             7,112      cache-misses              #    1.622 % of all cache refs    
+                50      page-faults                                                 
+               138      dTLB-load-misses                                            
+                 0      context-switches                                            
+
+       0.004680980 seconds time elapsed
+
+       0.003788000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 2
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 4096 4096 1
+Execution time: 0.000142812 secs
+
+ Performance counter stats for './simple_sequential 4096 4096 1':
+
+           459,861      cache-references                                            
+             7,786      cache-misses              #    1.693 % of all cache refs    
+                50      page-faults                                                 
+                97      dTLB-load-misses                                            
+                 0      context-switches                                            
+
+       0.003325670 seconds time elapsed
+
+       0.003877000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 3
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 65536 4096 0
+Execution time: 0.000256042 secs
+
+ Performance counter stats for './simple_sequential 65536 4096 0':
+
+           509,284      cache-references                                            
+             7,571      cache-misses              #    1.487 % of all cache refs    
+                65      page-faults                                                 
+               124      dTLB-load-misses                                            
+                 1      context-switches                                            
+
+       0.003725201 seconds time elapsed
+
+       0.003940000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 4
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 65536 4096 1
+Execution time: 0.000327552 secs
+
+ Performance counter stats for './simple_sequential 65536 4096 1':
+
+           478,173      cache-references                                            
+             7,859      cache-misses              #    1.644 % of all cache refs    
+                51      page-faults                                                 
+               118      dTLB-load-misses                                            
+                 1      context-switches                                            
+
+       0.006595299 seconds time elapsed
+
+       0.000000000 seconds user
+       0.007207000 seconds sys
+
+
+
+Test 5
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 1048576 4096 0
+Execution time: 0.003418750 secs
+
+ Performance counter stats for './simple_sequential 1048576 4096 0':
+
+         1,676,365      cache-references                                            
+            10,549      cache-misses              #    0.629 % of all cache refs    
+               305      page-faults                                                 
+               404      dTLB-load-misses                                            
+                 1      context-switches                                            
+
+       0.006873632 seconds time elapsed
+
+       0.007132000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 6
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 1048576 4096 1
+Execution time: 0.000206146 secs
+
+ Performance counter stats for './simple_sequential 1048576 4096 1':
+
+           479,649      cache-references                                            
+             7,557      cache-misses              #    1.576 % of all cache refs    
+                53      page-faults                                                 
+               152      dTLB-load-misses                                            
+                 1      context-switches                                            
+
+       0.004505825 seconds time elapsed
+
+       0.003976000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 7
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 65536 65536 0
+Execution time: 0.000080416 secs
+
+ Performance counter stats for './simple_sequential 65536 65536 0':
+
+           431,695      cache-references                                            
+             6,866      cache-misses              #    1.590 % of all cache refs    
+                50      page-faults                                                 
+               112      dTLB-load-misses                                            
+                 1      context-switches                                            
+
+       0.004803167 seconds time elapsed
+
+       0.000000000 seconds user
+       0.003974000 seconds sys
+
+
+
+Test 8
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 65536 65536 1
+Execution time: 0.000142760 secs
+
+ Performance counter stats for './simple_sequential 65536 65536 1':
+
+           446,645      cache-references                                            
+             7,885      cache-misses              #    1.765 % of all cache refs    
+                50      page-faults                                                 
+                97      dTLB-load-misses                                            
+                 2      context-switches                                            
+
+       0.004289419 seconds time elapsed
+
+       0.000000000 seconds user
+       0.003780000 seconds sys
+
+
+
+Test 9
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 1048576 65536 0
+Execution time: 0.000288854 secs
+
+ Performance counter stats for './simple_sequential 1048576 65536 0':
+
+           503,123      cache-references                                            
+             7,253      cache-misses              #    1.442 % of all cache refs    
+                66      page-faults                                                 
+               158      dTLB-load-misses                                            
+                 0      context-switches                                            
+
+       0.003300566 seconds time elapsed
+
+       0.003851000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 10
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./simple_sequential 1048576 65536 1
+Execution time: 0.000238542 secs
+
+ Performance counter stats for './simple_sequential 1048576 65536 1':
+
+           470,369      cache-references                                            
+             7,355      cache-misses              #    1.564 % of all cache refs    
+                53      page-faults                                                 
+               116      dTLB-load-misses                                            
+                 1      context-switches                                            
+
+       0.007564881 seconds time elapsed
+
+       0.000000000 seconds user
+       0.003959000 seconds sys
+
+
+
+Test 11
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 65536 4096 0.05 0
+Exeuction time: 0.001514688 secs
+
+ Performance counter stats for './context_switching 65536 4096 0.05 0':
+
+           564,115      cache-references                                            
+             8,490      cache-misses              #    1.505 % of all cache refs    
+                65      page-faults                                                 
+               131      dTLB-load-misses                                            
+                16      context-switches                                            
+
+       0.004536137 seconds time elapsed
+
+       0.004259000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 12
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 65536 4096 0.05 1
+Exeuction time: 0.001919895 secs
+
+ Performance counter stats for './context_switching 65536 4096 0.05 1':
+
+           499,009      cache-references                                            
+             7,118      cache-misses              #    1.426 % of all cache refs    
+                50      page-faults                                                 
+               100      dTLB-load-misses                                            
+                16      context-switches                                            
+
+       0.006999720 seconds time elapsed
+
+       0.007194000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 13
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 1048576 4096 0.05 0
+Exeuction time: 0.022408907 secs
+
+ Performance counter stats for './context_switching 1048576 4096 0.05 0':
+
+         2,622,475      cache-references                                            
+            22,571      cache-misses              #    0.861 % of all cache refs    
+               305      page-faults                                                 
+               403      dTLB-load-misses                                            
+               256      context-switches                                            
+
+       0.025849898 seconds time elapsed
+
+       0.000000000 seconds user
+       0.012883000 seconds sys
+
+
+
+Test 14
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 1048576 4096 0.05 1
+Exeuction time: 0.023356770 secs
+
+ Performance counter stats for './context_switching 1048576 4096 0.05 1':
+
+         2,784,687      cache-references                                            
+            19,288      cache-misses              #    0.693 % of all cache refs    
+               305      page-faults                                                 
+               423      dTLB-load-misses                                            
+               256      context-switches                                            
+
+       0.026418104 seconds time elapsed
+
+       0.000000000 seconds user
+       0.014352000 seconds sys
+
+
+
+Test 15
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 65536 4096 0.10 0
+Exeuction time: 0.001556407 secs
+
+ Performance counter stats for './context_switching 65536 4096 0.10 0':
+
+           558,966      cache-references                                            
+             8,575      cache-misses              #    1.534 % of all cache refs    
+                65      page-faults                                                 
+               114      dTLB-load-misses                                            
+                16      context-switches                                            
+
+       0.004506345 seconds time elapsed
+
+       0.004209000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 16
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 65536 4096 0.10 1
+Exeuction time: 0.001928594 secs
+
+ Performance counter stats for './context_switching 65536 4096 0.10 1':
+
+           522,613      cache-references                                            
+             7,860      cache-misses              #    1.504 % of all cache refs    
+                53      page-faults                                                 
+               101      dTLB-load-misses                                            
+                16      context-switches                                            
+
+       0.007369673 seconds time elapsed
+
+       0.007609000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 17
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 1048576 4096 0.10 0
+Exeuction time: 0.022491823 secs
+
+ Performance counter stats for './context_switching 1048576 4096 0.10 0':
+
+         2,634,297      cache-references                                            
+            22,242      cache-misses              #    0.844 % of all cache refs    
+               307      page-faults                                                 
+               411      dTLB-load-misses                                            
+               257      context-switches                                            
+
+       0.025809793 seconds time elapsed
+
+       0.000000000 seconds user
+       0.012686000 seconds sys
+
+
+
+Test 18
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 1048576 4096 0.10 1
+Exeuction time: 0.020027500 secs
+
+ Performance counter stats for './context_switching 1048576 4096 0.10 1':
+
+         1,788,575      cache-references                                            
+            13,459      cache-misses              #    0.752 % of all cache refs    
+               121      page-faults                                                 
+               181      dTLB-load-misses                                            
+               256      context-switches                                            
+
+       0.023072612 seconds time elapsed
+
+       0.009974000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 19
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 65536 4096 0.20 0
+Exeuction time: 0.001529532 secs
+
+ Performance counter stats for './context_switching 65536 4096 0.20 0':
+
+           570,460      cache-references                                            
+             8,316      cache-misses              #    1.458 % of all cache refs    
+                65      page-faults                                                 
+               126      dTLB-load-misses                                            
+                17      context-switches                                            
+
+       0.004856189 seconds time elapsed
+
+       0.004258000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 20
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 65536 4096 0.20 1
+Exeuction time: 0.001386563 secs
+
+ Performance counter stats for './context_switching 65536 4096 0.20 1':
+
+           529,390      cache-references                                            
+             7,888      cache-misses              #    1.490 % of all cache refs    
+                50      page-faults                                                 
+                98      dTLB-load-misses                                            
+                18      context-switches                                            
+
+       0.004483388 seconds time elapsed
+
+       0.004202000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 21
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 1048576 4096 0.20 0
+Exeuction time: 0.022558125 secs
+
+ Performance counter stats for './context_switching 1048576 4096 0.20 0':
+
+         2,628,985      cache-references                                            
+            31,911      cache-misses              #    1.214 % of all cache refs    
+               305      page-faults                                                 
+               397      dTLB-load-misses                                            
+               256      context-switches                                            
+
+       0.025589846 seconds time elapsed
+
+       0.012603000 seconds user
+       0.000000000 seconds sys
+
+
+
+Test 22
+sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./context_switching 1048576 4096 0.20 1
+Exeuction time: 0.019609636 secs
+
+ Performance counter stats for './context_switching 1048576 4096 0.20 1':
+
+         1,711,630      cache-references                                            
+            13,950      cache-misses              #    0.815 % of all cache refs    
+               107      page-faults                                                 
+               172      dTLB-load-misses                                            
+               259      context-switches                                            
+
+       0.029534685 seconds time elapsed
+
+       0.009804000 seconds user
+       0.000000000 seconds sys
+
+
+
+
