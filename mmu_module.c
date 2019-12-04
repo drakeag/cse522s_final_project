@@ -26,6 +26,13 @@
 		ttbr; \
 	})
 
+#define get_pgd() \
+	({ \
+		unsigned int pg = get_ttbr0(); \
+		pg &= ~(PTRS_PER_PGD*sizeof(pgd_t)-1); \
+		(pgd_t *)phys_to_virt(pg); \
+	})
+
 static dev_t first; // Global variable for the first device number 
 static struct cdev c_dev; // Global variable for the character device structure
 static struct class *cl; // Global variable for the device class
@@ -62,7 +69,7 @@ vm_fault_t vma_fault(struct vm_fault *vmf)
 	if (fault_counter == 1) {
 		asm("mrc p15, 0, %0, c6, c0, 0" : "=r" (save_fault) ::);
 		printk("saved fault 0%lx\n", save_fault);
-	} else if (fault_counter == 2) {
+	} else if (fault_counter >= 2) {
 
 		// Get the first fault's values
 		u32 l1_addr;
@@ -98,9 +105,9 @@ vm_fault_t vma_fault(struct vm_fault *vmf)
 		large_pte_val = save_fault;
 		u32 tex = (large_pte_val >> 6) & 3U;               // mask out the tex bits
 		u32 xn  = large_pte_val & 1U;                      // mask out the execute never bit
-		large_pte_val &= ~(0xF000U);                       // clear lower address bits
+		large_pte_val &= ~(0xFFFFF000U);                   // clear lower address bits 
 		large_pte_val &= ~(3U);                            // clear small pte bits
-		large_pte_val |= 1U | (tex << 12) | (xn << 15);    // make the large page descriptor
+		large_pte_val |= virt_to_phys(vmf->vma->vm_private_data) | 1U | (tex << 12) | (xn << 15);    // make the large page descriptor
 		
 		u32* large_pte = (u32*)l2_addr;
 		*large_pte = large_pte_val;
@@ -110,9 +117,10 @@ vm_fault_t vma_fault(struct vm_fault *vmf)
 		printk("%d pages for vma range 0x%lx - 0x%lx\n", total_pages, vmf->vma->vm_end, vmf->vma->vm_start);
 
 		while (current_page < total_pages) {
-			*large_pte = large_pte_val + ((current_page/16U) << 16);
-			asm("mcr p15, 0, %0, c7, c10, 1" :: "r"(large_pte) :);	// flush VMA
+			*large_pte = large_pte_val + ((current_page/16U) << 16); // increase the base address to map to the correct pages
+			asm("mcr p15, 0, %0, c7, c10, 1" :: "r"(large_pte) :);	 // flush VMA
 			//printk("ARM pte value 0x%lx=0x%lx\n", large_pte, *large_pte);
+			//printk("0x%lx\n", virt_to_phys(vmf->vma->vm_private_data));
 			
 			// Move to next pte
 			large_pte++;
