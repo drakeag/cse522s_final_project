@@ -420,7 +420,7 @@ Test 23
 sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./random_access 4096 1 0
 Execution time: 0.000155104 secs
 
- Performance counter stats for './random_access 4096 4096 0':
+ Performance counter stats for './random_access 4096 1 0':
 
            422,911      cache-references                                            
              6,578      cache-misses              #    1.555 % of all cache refs    
@@ -439,7 +439,7 @@ Test 24
 sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./random_access 4096 1 1
 Execution time: 0.000129218 secs
 
- Performance counter stats for './random_access 4096 4096 1':
+ Performance counter stats for './random_access 4096 1 1':
 
            440,165      cache-references                                            
              6,699      cache-misses              #    1.522 % of all cache refs    
@@ -458,7 +458,7 @@ Test 25
 sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./random_access 65536 16 0
 Execution time: 0.000190573 secs
 
- Performance counter stats for './random_access 65536 4096 0':
+ Performance counter stats for './random_access 65536 16 0':
 
            460,769      cache-references                                            
              6,710      cache-misses              #    1.456 % of all cache refs    
@@ -477,7 +477,7 @@ Test 26
 sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./random_access 65536 16 1
 Execution time: 0.000186511 secs
 
- Performance counter stats for './random_access 65536 4096 1':
+ Performance counter stats for './random_access 65536 16 1':
 
            460,165      cache-references                                            
              6,848      cache-misses              #    1.488 % of all cache refs    
@@ -496,7 +496,7 @@ Test 27
 sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./random_access 1048576 256 0
 Execution time: 0.002216719 secs
 
- Performance counter stats for './random_access 1048576 4096 0':
+ Performance counter stats for './random_access 1048576 256 0':
 
          1,233,392      cache-references                                            
              9,796      cache-misses              #    0.794 % of all cache refs    
@@ -515,7 +515,7 @@ Test 28
 sudo ./perf stat -e cache-references,cache-misses,page-faults,dTLB-load-misses,context-switches ./random_access 1048576 256 1
 Execution time: 0.004191406 secs
 
- Performance counter stats for './random_access 1048576 4096 1':
+ Performance counter stats for './random_access 1048576 256 1':
 
          1,474,956      cache-references                                            
              8,634      cache-misses              #    0.585 % of all cache refs    
