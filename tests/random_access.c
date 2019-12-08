@@ -1,194 +1,90 @@
 /*
-  ONE-SIDED HPCC RandomAccess benchmark
-
-  According to the rules, there are to be 4 times as many updates as there are
-  entries in the table. A random number is generated, and the lower bits are
-  used as an index into the table. The value of that table entry is XORed with
-  the random number and then stored.
-
-  The next random number is generated using a shift-register and an HPCC-spec
-  polynomial.
-
-  Each table entry is a 64-bit integer.
+  Program that allocates a block of memory and writes
+  data to it at random index locations. Takes an offset
   
-  The test is supposed to be run with the largest table size at an
-  even power of 2 that will fit into available memory. (Note that each
-  entry is an 8-byte integer.)
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <assert.h>
-#include <limits.h>
-#include <math.h>
 #include <time.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "commonlib.h"
 
-#define ZERO64B 0LL
-#define POLY 0x0000000000000007ULL
-#define PERIOD 1317624576693539401LL
+#define NUM_EXPECTED_ARGS 4 
 
-static int NUM_EXPECTED_ARGS = 3;
-static int USE_MMAP_DRIVER = 0; // 0=False, 1=True
-
-static uint8_t 
-iteration(uint64_t    * table,
-          unsigned long tbl_entries,
-          uint64_t      ran)
+static void usage(void)
 {
-    uint64_t idx;
-    unsigned long long access;
-    int offset;
-
-
-    /* 
-     The HPCC spec is 4 * table size updates total
-     The polynomial used in the shift register is provided by the
-     HPCC.
-    */
-    for (idx = 0; idx < tbl_entries * 4; idx++) {
-        /* mask lower bits */
-        offset = ran & (tbl_entries - 1);
-        table[offset] ^= ran;
-        ran = (ran << 1) ^ ((int64_t) ran < ZERO64B ? POLY : ZERO64B); 
-    }
-
-    return (uint8_t)ran;
-}
-
-static int
-__run_kernel(unsigned long long iterations,
-             uint64_t         * array,
-             unsigned long      array_entries,
-             uint64_t           ran)
-{
-    unsigned long long iter;
-    struct timeval t1, t2;
-    int fd, status;
-    uint8_t dummy;
-
-    for (iter = 0; iter < iterations; iter++) {
-        dummy = iteration(array, array_entries, ran);
-        //printf("Iteration %llu finished\n", iter);
-    }
-
-    return 0;
-}
-
-/* 
-   Utility routine to start random number generator at Nth step
-   (shameless lifted from public domain HPCC version)
- */
-uint64_t
-HPCC_starts(int64_t n)
-{
-  int i, j;
-  uint64_t m2[64];
-  uint64_t temp, ran;
-
-  while (n < 0) n += PERIOD;
-  while (n > PERIOD) n -= PERIOD;
-  if (n == 0) return 0x1;
-
-  temp = 0x1;
-  for (i=0; i<64; i++) {
-    m2[i] = temp;
-    temp = (temp << 1) ^ ((int64_t) temp < 0 ? POLY : 0);
-    temp = (temp << 1) ^ ((int64_t) temp < 0 ? POLY : 0);
-  }
-
-  for (i=62; i>=0; i--)
-    if ((n >> i) & 1)
-      break;
-
-  ran = 0x2;
-  while (i > 0) {
-    temp = 0;
-    for (j=0; j<64; j++)
-      if ((ran >> j) & 1)
-        temp ^= m2[j];
-    ran = temp;
-    i -= 1;
-    if ((n >> i) & 1)
-      ran = (ran << 1) ^ ((int64_t) ran < 0 ? POLY : 0);
-  }
-
-  return ran;
-}
-
-
-
-static int
-run_kernel(unsigned long      tbl_entries,
-           unsigned long long iterations)
-{
-    uint64_t * table;
-    uint64_t   ran;
-    int        ret;
-    size_t length = sizeof(uint64_t) * tbl_entries;
-
-    /*table = (uint64_t *)malloc(sizeof(uint64_t) * tbl_entries);
-    if (table == NULL) {
-        printf("Out of memory\n");
-        return -1;
-    }*/
-    
-    table = (uint64_t *)get_mmap_addr(length, USE_MMAP_DRIVER);
-    if (table == MAP_FAILED)
-    {
-      perror("mmap");
-      exit(EXIT_FAILURE);
-    }
-
-	  // get initial random offset into table
-    ran = HPCC_starts(0); 
-    ret = __run_kernel(iterations, table, tbl_entries, ran);
-
-    //free(table);
-    //munmap(table, length);
-
-    return ret;
-
-}
-
-static void
-usage(void)
-{
-    printf("Usage: ./random_access <table size (MB) per proc> (must be power of 2) <mmap function> (0 for system, 1 for custom driver)\n");
+    printf("Usage: ./random_access <size> <loops> <mmap function>\n");
+    printf("\t<size>         : map size in bytes, must be even\n");
+    printf("\t<loops>        : number of iterations, must be positive\n");
+    printf("\t<mmap function>: 0 for system, 1 for custom driver\n");
 }
 
 int main(int argc, char ** argv)
 {
+    int i = 0;
     int ret;
-    unsigned long t_size, t_entries;
-    float t_size_mb;
-    uint64_t * table;
+	unsigned int step = 0;
+    unsigned long int map_size;
+    int use_mmap_driver = 0;
+    int *address = NULL;
+    int *orig_addr = NULL;
+    unsigned long int loops;
     struct timespec start_time;
     struct timespec end_time;
 
-    if (argc != NUM_EXPECTED_ARGS) {
-        usage();
-        return -1;
+    if (argc != NUM_EXPECTED_ARGS)
+    {
+      printf("Incorrect number of arguments\n");
+      usage();
+      exit(EXIT_FAILURE);
     }
 
-    t_size_mb = atof(argv[1]);
-    USE_MMAP_DRIVER = atoi(argv[2]);
-    t_size    = t_size_mb * (1ULL << 20);
-    t_entries = t_size / sizeof(uint64_t);
-
-    if (t_entries & (t_entries - 1)) {
+    sscanf(argv[1], "%lu", &map_size);
+    sscanf(argv[2], "%lu", &loops);
+    use_mmap_driver = atoi(argv[3]);
+    
+    if (map_size % 2 != 0)
+    {
+        printf("Size must be even\n");
         usage();
-        return -1;
+        exit(EXIT_FAILURE);
+    }
+    
+    if (loops < 0)
+    {
+        printf("Loops must be greater than 0\n");
+        usage();
+        exit(EXIT_FAILURE);
     }
 
     get_time(&start_time);
-    ret = run_kernel(t_entries, 4);
+    
+    orig_addr = get_mmap_addr(map_size, use_mmap_driver); // Keep the original address so we can unmap later
+    address = orig_addr;
+    
+    
+    if (address == MAP_FAILED)
+    {
+        exit(EXIT_FAILURE);
+    }    
+    
+    unsigned long int num_map_entries = map_size / sizeof(int);
+    int rand_index;
+    
+    for (int i=0; i<loops; i++)
+    {
+        rand_index = get_rand(0, num_map_entries-1);
+        address[rand_index] = i;
+        //printf("%d\n", address[rand_index]);
+    }
+    
+    munmap(orig_addr, map_size);
     get_time(&end_time);
     printf("Execution time: %.9f secs\n", timediff(start_time, end_time));
     
-    return ret;    
+    return ret;   
 }

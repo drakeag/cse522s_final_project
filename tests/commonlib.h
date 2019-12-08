@@ -40,3 +40,11 @@ int *get_mmap_addr(int size, int mmap_function)
   
     return address;
 }
+
+/**
+ * @brief Returns a random number in the range [min, max]. 
+ */
+int get_rand(int min, int max)
+{ 
+    return (rand() % (max - min + 1)) + min; 
+} 
