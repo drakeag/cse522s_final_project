@@ -12,6 +12,10 @@
 #include <asm/pgtable.h>
 #include <asm/pgtable-2level.h>
 
+
+/* Macros */
+
+// Returns the translation base control register
 #define get_ttbcr() \
 	({ \
 		unsigned int ttbcr; \
@@ -19,6 +23,7 @@
 		ttbcr; \
 	})
 
+// Returns the translation base register 0
 #define get_ttbr0() \
 	({ \
 		unsigned int ttbr; \
@@ -26,6 +31,7 @@
 		ttbr; \
 	})
 
+// Returns address pointed to by TTBR0
 #define get_pgd() \
 	({ \
 		unsigned int pg = get_ttbr0(); \
@@ -33,13 +39,16 @@
 		(pgd_t *)phys_to_virt(pg); \
 	})
 
-static dev_t first; // Global variable for the first device number 
-static struct cdev c_dev; // Global variable for the character device structure
-static struct class *cl; // Global variable for the device class
+/* Globals */
 
+// Char device variables
+static struct cdev dev; 
+static dev_t  dev_number;     
+static struct class *dev_class;
+
+// Fault variables
 static unsigned int fault_counter = 0U;
 static unsigned int save_fault = 0U; 
-static unsigned int addr = 0U;
 
 /**
  * @brief Called the first time a memory area is accessed 
@@ -202,10 +211,7 @@ static int driver_release(struct inode* inodep, struct file* filep)
 static int driver_open(struct inode* inodep, struct file* filep)
 {
 	printk(KERN_INFO "Driver opened\n");
-
-	// 128 KB
 	filep->private_data = kmalloc(0x100000, GFP_KERNEL);
-	addr = filep->private_data;
 	if (!filep->private_data)
 		return -1;
 	return 0;
@@ -222,27 +228,23 @@ static int __init m_init(void)
 {
     printk(KERN_ALERT "Project module initialized\n");
 
-
-	if (alloc_chrdev_region(&first, 0, 1, "cse522s") < 0) {
+	if (alloc_chrdev_region(&dev_number, 0, 1, "cse522s") < 0) {
 		return -1;
 	}
-
-	if ((cl = class_create(THIS_MODULE, "chardrv")) == NULL) {
-		unregister_chrdev_region(first, 1);
+	if ((dev_class = class_create(THIS_MODULE, "chardrv")) == NULL) {
+		unregister_chrdev_region(dev_number, 1);
 		return -1;
 	}
-
-	if (device_create(cl, NULL, first, NULL, "cproj") == NULL) {
-		class_destroy(cl);
-		unregister_chrdev_region(first, 1);
+	if (device_create(dev_class, NULL, dev_number, NULL, "cproj") == NULL) {
+		class_destroy(dev_class);
+		unregister_chrdev_region(dev_number, 1);
 		return -1;
 	}
-	cdev_init(&c_dev, &fops);
-
-	if (cdev_add(&c_dev, first, 1) == -1) {
-		device_destroy(cl, first);
-		class_destroy(cl);
-		unregister_chrdev_region(first, 1);
+	cdev_init(&dev, &fops);
+	if (cdev_add(&dev, dev_number, 1) == -1) {
+		device_destroy(dev_class, dev_number);
+		class_destroy(dev_class);
+		unregister_chrdev_region(dev_number, 1);
 		return -1;
 	}
 
@@ -252,10 +254,10 @@ static int __init m_init(void)
 static void __exit m_exit(void)
 {
     printk(KERN_ALERT "Project module is being unloaded\n");
-	cdev_del(&c_dev);
-	device_destroy(cl, first);
-	class_destroy(cl);
-	unregister_chrdev_region(first, 1);
+	cdev_del(&dev);
+	device_destroy(dev_class, dev_number);
+	class_destroy(dev_class);
+	unregister_chrdev_region(dev_number, 1);
 }
 
 module_init(m_init);
